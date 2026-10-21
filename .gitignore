@@ -1,0 +1,7 @@
+dataset/real_oficial/
+dataset/real_nativo/
+dataset/fake_verificada/
+dataset/_descartadas/
+dataset/_triagem/
+dataset/_paginas/
+*.zip

@@ -1,0 +1,4 @@
+id,rotulo,origem,politico,fonte_url,fonte_checagem_url,data_publicacao,licenca_ou_direitos,arquivo_local,sha256,formato_original,largura_original,altura_original,como_obtida,gerador_e_prompt,observacoes
+R001,real,agencia_oficial,,,,,CC BY (confirmar),,,,,,download direto,,
+F001,fake,verificada_checador,,,,,uso em pesquisa (so links e hashes),,,,,,captura da publicacao,,
+F101,fake,gerada_propria,,n/a,n/a,,gerada pela autora (privada),,,,,,gerada por modelo aberto,"modelo=; versao=; prompt=; seed=",cena neutra
