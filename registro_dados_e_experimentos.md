@@ -10,7 +10,7 @@ Atualizado em 14/10/2026. Documento de registro técnico, **não** é o texto do
 5. Nesse conjunto, o UnivFD teve AUC **0,32** e o FSD **0,46**: o UnivFD ficou **invertido** (acha as falsas mais reais).
 6. Pareando por nitidez e tamanho (119 pares), os atalhos caíram para 0,46. Aí o UnivFD ficou no acaso (0,44) e o FSD ficou **abaixo do acaso** (0,36).
 7. Conclusão provisória: com essas imagens e gerações, **nenhum dos dois detectores discrimina** real de gerada, e os resultados brutos são enganosos por causa de viés de processamento.
-8. Falta o controle positivo (condição sem JPEG, recortes nativos), que está em preparação.
+8. Controle sem JPEG extra (condição C, reais ainda como miniaturas do Commons): UnivFD AUC 0,41 e FSD 0,34 no conjunto todo; 0,50 e 0,45 no pareado (seção 3.8). A versão com reais nativas ainda não foi feita.
 9. Há 16 dias até o prazo (30/10/2026).
 10. Limitações importantes: amostras pequenas, identidades dos políticos não verificadas, geradores só de difusão, sem imagens falsas reais em volume.
 
@@ -186,9 +186,48 @@ O FSD, no limiar −2, classificou **tudo** como falso, então o limiar padrão 
 
 ---
 
+### 3.8 Condição C com miniaturas do Commons (notebook `4b_controle_positivo_miniaturas.ipynb`, 22/10/2026)
+- Reais = as mesmas miniaturas de 1024 px do Commons usadas antes; falsas = as 514 geradas. Recorte central 512×512 (alinhado a 8 px) e **PNG nas duas classes, sem nenhum JPEG novo**. Só a condição C foi rodada (as condições A e D do notebook não).
+- Resultado (saída colada em 22/10/2026):
+
+| Detector | Conjunto | n | AUC | IC95 (bootstrap) |
+|---|---|---|---|---|
+| UnivFD | todas | 1027 | 0,412 | [0,38; 0,45] |
+| UnivFD | pareado | 138 (69 pares) | 0,496 | [0,40; 0,59] |
+| FSD | todas | 1027 | 0,339 | [0,31; 0,37] |
+| FSD | pareado | 138 (69 pares) | 0,445 | [0,35; 0,54] |
+
+- AUC dos atalhos no subconjunto pareado: 0,384 (abaixo de 0,5 por validação cruzada em amostra pequena, ou seja, sem separação). 
+- Auditoria de atalhos no conjunto todo (11 atributos triviais, regressão logística, 5-fold; as três condições rodaram a auditoria, mas só a C teve detectores):
+
+| Condição | AUC atalhos (todos) | Laplaciano (AUC isolado) | Tamanho do arquivo | Gradiente | Mediana do laplaciano (reais × falsas) |
+|---|---|---|---|---|---|
+| C (PNG, sem JPEG) | **0,974** | 0,793 | 0,561 | 0,701 | 0,0164 × 0,0041 |
+| A (JPEG q90) | 0,938 | 0,776 | 0,706 | 0,683 | 0,0151 × 0,0040 |
+| D (falsas q95+q90) | 0,941 | 0,718 | 0,575 | 0,635 | 0,0151 × 0,0058 |
+
+- Leitura: o viés **não caiu** em nenhuma condição (antes: 0,946). Em C ele é o maior (0,974), e as reais têm cerca de 4× mais detalhe de alta frequência que as falsas. Em D, igualar o número de compressões reduz a diferença de nitidez (0,0058 contra 0,0151, cerca de 2,6×), mas o conjunto continua separável (0,941). Ou seja, o viés não vem do número de recompressões; é uma diferença de conteúdo/processamento (hipótese anterior: miniaturas do Commons reduzidas de fotos grandes × pixels nativos de difusão), ainda não testada com originais.
+- Leitura: tirar o JPEG extra **não fez os detectores funcionarem**. O UnivFD sobe de 0,32 (condição A) para 0,41, mas continua abaixo de 0,5 com IC que não inclui 0,5. O FSD fica pior (de 0,46 para 0,34). No subconjunto pareado os dois ficam compatíveis com o acaso (IC incluem 0,5), mas o pareado agora tem 69 pares, contra 119 antes, então os dois pareados não são diretamente comparáveis.
+- Ressalva central: as reais continuam sendo miniaturas reduzidas e recodificadas pelo Commons, então **isto não é um controle positivo limpo**. Mostra que a recompressão que o meu pipeline aplicou não é a causa do resultado, não que o viés das reais foi removido.
+- Esses detectores podem não generalizar para SD 1.5, SDXL e SDXL-Turbo por motivos próprios (o UnivFD foi treinado em outro tipo de gerador; o FSD foi usado a 512 px, abaixo do padrão). Isso é hipótese e não foi testado aqui.
+
+### 3.9 Auditoria com reais NATIVAS (notebook `4_nativo_controle_positivo.ipynb`, 24/10/2026)
+- Reais: 513 recortes centrais 512×512 de originais do Commons (baixados em 22 e 23/10 por `3c_baixar_real_nativo_local.ps1`; o Wikimedia limita o download de originais com 429 e `Retry-After: 600`), PNG, sem reamostragem. Falsas: as mesmas 514. Condições C (PNG), A (JPEG q90) e D (falsas q95+q90).
+- **Rodada anterior descartada:** em 24/10 o notebook `4b` (miniaturas) foi aberto por engano no lugar do 4 e repetiu exatamente os números do UnivFD da seção 3.8 (AUC 0,412 e pareado 0,496). Serviu de checagem de reprodutibilidade; os resultados estão em `MyDrive/tcc_politicos/controle_miniaturas/`.
+
+| Condição | AUC atalhos (11 atributos) | Laplaciano (AUC isolado) | Tamanho do arquivo | Gradiente | Mediana do laplaciano (reais × falsas) |
+|---|---|---|---|---|---|
+| C (PNG, sem JPEG) | 0,956 | 0,643 | 0,707 | 0,598 | 0,0025 × 0,0041 |
+| A (JPEG q90) | 0,923 | 0,627 | 0,509 | 0,592 | 0,0026 × 0,0040 |
+| D (falsas q95+q90) | 0,931 | 0,713 | 0,636 | 0,645 | 0,0026 × 0,0058 |
+
+- **Achado:** com reais nativas, o sentido da diferença de nitidez **se inverteu**. Nas miniaturas as reais tinham ~4× mais detalhe de alta frequência que as falsas (laplaciano 0,0164 × 0,0041); nos recortes nativos têm **menos** (0,0025 × 0,0041). Isso é compatível com a hipótese da seção 3.5 (as miniaturas do Commons ganhavam nitidez ao serem reduzidas de originais grandes), agora com evidência direta, mas a hipótese ainda não foi testada de forma isolada.
+- **O viés total não caiu:** os atalhos continuam separando as classes (AUC 0,92 a 0,96; antes 0,946 e 0,974). O laplaciano sozinho caiu de 0,79 para 0,64 na condição C, então a separação agora vem de outros atributos. **Falta identificar quais** (a saída colada mostra só laplaciano, tamanho e gradiente; os 11 atributos estão na memória do notebook).
+- AUC dos detectores com reais nativas: **pendente** (células 4 e 5 ainda não coladas).
+
 ## 4. Em andamento
-- **Recortes nativos dos originais** (`dataset/real_nativo/`): 431 de 513 prontos às 18:40 de 14/10, com algumas falhas (provável: originais com lado menor < 512). Recorte central 512×512 alinhado à grade 8×8 do JPEG, salvo em PNG, sem reamostragem. Log em `dataset/real_nativo_log.csv`.
-- **Condição C (sem JPEG nenhum):** reais nativas e falsas em PNG, o melhor caso para os detectores, como **controle positivo**. Será acompanhada da condição A com as reais nativas e de nova auditoria. O notebook ainda não foi escrito.
+- **Recortes nativos dos originais** (`dataset/real_nativo/`): a primeira rodada (14/10) chegou a 431 de 513, mas essas imagens **não estão mais neste computador**. A tentativa de refazer no Colab falhou (32 de 514; o Wikimedia devolve 429) e a de refazer localmente (`3c_baixar_real_nativo_local.ps1`) está limitada pelo Wikimedia: o servidor de originais responde 429 com `Retry-After: 600`, então o ritmo é de cerca de 1 imagem a cada 30 s ou menos. Recorte central 512×512 alinhado à grade 8×8, PNG, sem reamostragem.
+- **Condição C com reais nativas (controle positivo limpo):** depende dessas imagens. Se não chegar a tempo, o texto usa a condição C com miniaturas (seção 3.8) e declara a limitação.
 - **Pendências externas:** carta do orientador (ele se comprometeu a escrever; prazo sugerido 25/10), resposta da Lupa (mensagem enviada por WhatsApp), Lattes e mini-bio.
 
 ---
@@ -205,7 +244,7 @@ O FSD, no limiar −2, classificou **tudo** como falso, então o limiar padrão 
 9. Limiares fixos (UnivFD 0,5; FSD −2,0), sem otimização com validação independente.
 10. Estimativas de tempo e custo computacional são aproximadas.
 11. Fotos de agência com painéis e texto legível nas reais podem introduzir viés de conteúdo; falsas geradas costumam errar texto.
-12. Sem controle positivo ainda para a cadeia de processamento do conjunto político.
+12. O controle sem JPEG (condição C) usa reais que são miniaturas recodificadas do Commons; não há ainda controle positivo com reais nativas nem com um conjunto em que os detectores sabidamente funcionem.
 
 ---
 
