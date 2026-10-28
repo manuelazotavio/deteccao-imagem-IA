@@ -110,12 +110,5 @@ As **imagens não estão no repositório** (as reais têm licenças próprias e 
 - Um detector de IA **não prova** que uma imagem seja falsa ou enganosa, nem a ausência de detecção prova que o contexto seja verdadeiro. Use os resultados como pista.
 - Os modelos e códigos de terceiros (UnivFD, FSD, BLIP, Stable Diffusion) têm licenças próprias.
 
-## Autoria
-
-- **Estudante:** [PREENCHER]
-- **Orientação:** [PREENCHER]
-- **Uso de IA:** um assistente de IA (Claude, da Anthropic) apoiou a escrita e a correção de erros do código, e a organização dos textos. Decisões, execuções, análises e interpretação dos resultados são da estudante.
-
-## Como citar
 
 [PREENCHER: nome da estudante, título, instituição, ano.]
